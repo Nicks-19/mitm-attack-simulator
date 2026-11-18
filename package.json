@@ -1,0 +1,19 @@
+{
+  "name": "mitm-attack-simulator",
+  "version": "1.0.0",
+  "description": "Interactive Man-in-the-Middle (MITM) Attack Simulator with Web Crypto API AES-GCM",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve .",
+    "test": "node test_suite_runner.js"
+  },
+  "keywords": [
+    "cybersecurity",
+    "mitm",
+    "aes-gcm",
+    "web-crypto-api",
+    "simulator"
+  ],
+  "author": "",
+  "license": "MIT"
+}

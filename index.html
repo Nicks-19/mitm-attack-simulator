@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Man-in-the-Middle (MITM) Attack Simulator | Cyber Defense Lab</title>
+  
+  <!-- Bootstrap 5 CSS & Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" crossorigin="anonymous">
+  
+  <!-- Custom Cyber Theme Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar navbar-expand-xl navbar-cyber sticky-top px-3">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <i class="bi bi-shield-shaded brand-icon"></i>
+        <div>
+          <div class="brand-text text-light">MITM ATTACK SIMULATOR</div>
+          <div class="brand-tag">CYBERSECURITY LAB &bull; ALICE - EVE - BOB</div>
+        </div>
+      </a>
+
+      <button class="navbar-toggler text-light border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav me-auto mb-2 mb-xl-0 ms-xl-4 gap-1">
+          <li class="nav-item">
+            <a class="nav-link nav-link-cyber active" href="#simulator"><i class="bi bi-diagram-3 me-1"></i> Simulator</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-link-cyber" href="#matrix"><i class="bi bi-table me-1"></i> State Matrix &amp; Diff</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-link-cyber" href="#crypto"><i class="bi bi-key-fill me-1"></i> AES-GCM Inspector</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-link-cyber" href="#education"><i class="bi bi-book-half me-1"></i> Knowledge Base</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-link-cyber" href="#tests"><i class="bi bi-check2-all me-1"></i> Evaluation Tests</a>
+          </li>
+        </ul>
+
+        <!-- Global Action Controls -->
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <!-- Active Stage Pill -->
+          <span class="badge bg-dark border border-secondary text-info px-3 py-2" id="activeStageNamePill">
+            Stage 1: Initial State
+          </span>
+
+          <!-- Mode Switch Toggle -->
+          <div class="form-check form-switch d-flex align-items-center gap-2 bg-darker p-2 px-3 rounded border border-secondary mb-0">
+            <input class="form-check-input mt-0" type="checkbox" role="switch" id="secureModeToggle">
+            <label class="form-check-label small fw-bold text-light" for="secureModeToggle">
+              <span id="globalSecurityBadge" class="badge bg-danger-glow"><i class="bi bi-shield-slash-fill"></i> INSECURE (PLAINTEXT)</span>
+            </label>
+          </div>
+
+          <!-- Sound Mute/Unmute -->
+          <button class="btn btn-sm btn-outline-secondary text-light" id="btnToggleSound" title="Toggle Synthesized Audio Feedback">
+            <i class="bi bi-volume-up-fill"></i> Sound: ON
+          </button>
+
+          <!-- Complete Reset Simulation Button -->
+          <button class="btn btn-sm btn-cyber-danger" id="btnResetSimulation" title="Reset all simulation values, logs, and states">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset Simulation
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="container-fluid px-3 px-lg-4 mt-3">
+
+    <!-- Top HUD: Real-Time Security & Attack Status Metrics -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="hud-card">
+          <div class="hud-title">Channel Security Mode</div>
+          <div class="hud-value" id="hudChannelSecurity">
+            <span class="text-danger"><i class="bi bi-shield-x"></i> Plaintext HTTP</span>
+          </div>
+          <i class="bi bi-hdd-network hud-icon text-danger"></i>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="hud-card">
+          <div class="hud-title">MITM Attack Status</div>
+          <div class="hud-value" id="hudAttackStatus">
+            <span class="text-muted"><i class="bi bi-pause-circle"></i> IDLE</span>
+          </div>
+          <i class="bi bi-broadcast hud-icon text-warning"></i>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="hud-card">
+          <div class="hud-title">Payload Integrity</div>
+          <div class="hud-value" id="hudPayloadIntegrity">
+            <span class="text-muted">UNCHECKED</span>
+          </div>
+          <i class="bi bi-fingerprint hud-icon text-info"></i>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="hud-card">
+          <div class="hud-title">Confidentiality Level</div>
+          <div class="hud-value" id="hudConfidentiality">
+            <span class="text-danger"><i class="bi bi-unlock"></i> EXPOSED (PLAINTEXT)</span>
+          </div>
+          <i class="bi bi-eye-slash hud-icon text-purple"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 1: SIMULATOR WORKSPACE & LIVE NETWORK DIAGRAM -->
+    <section id="simulator" class="mb-4">
+      <div class="network-workspace">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="text-light mb-1"><i class="bi bi-activity text-cyan me-2"></i>Live Communication Topology &amp; Attack Interceptor</h5>
+            <p class="text-muted small mb-0">Interactive Alice-Eve-Bob network with animated SVG transmission vectors, packet inspection, and cryptographic verification.</p>
+          </div>
+          <div>
+            <span class="badge bg-secondary me-2"><i class="bi bi-circle-fill text-success me-1"></i> Web Crypto API Ready</span>
+          </div>
+        </div>
+
+        <div class="network-svg-container" id="networkDiagramContainer">
+          <!-- Animated SVG Overlay for Transmission Paths -->
+          <svg id="networkSvgOverlay">
+            <defs>
+              <!-- Arrowhead Normal (Cyan) -->
+              <marker id="arrowhead-normal" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#38bdf8" />
+              </marker>
+              <!-- Arrowhead Secure (Purple) -->
+              <marker id="arrowhead-secure" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#a855f7" />
+              </marker>
+              <!-- Arrowhead Tampered (Red) -->
+              <marker id="arrowhead-tampered" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+              </marker>
+            </defs>
+
+            <!-- Leg 1: Alice to Eve -->
+            <path id="svgPathAliceEve" class="svg-flow-idle" marker-end="url(#arrowhead-normal)" d="M 0 0" />
+            <!-- Leg 2: Eve to Bob -->
+            <path id="svgPathEveBob" class="svg-flow-idle" marker-end="url(#arrowhead-normal)" d="M 0 0" />
+            <!-- Direct Channel (Bypass line) -->
+            <path id="svgPathDirect" class="svg-flow-idle" stroke-dasharray="4 4" opacity="0.3" d="M 0 0" />
+          </svg>
+
+          <!-- Animated Flying Data Packet -->
+          <div id="animatedDataPacket" class="animated-packet">
+            <i class="bi bi-envelope-fill"></i>
+            <span>PACKET</span>
+          </div>
+
+          <!-- Network Diagram Nodes (Alice, Eve, Bob) -->
+          <div class="row g-4 align-items-start">
+
+            <!-- ALICE NODE (Client / Sender) -->
+            <div class="col-lg-4 node-column">
+              <div class="node-card node-alice" id="aliceNodeCard">
+                <div class="node-header">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="node-avatar avatar-alice">
+                      <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div>
+                      <h5 class="text-light mb-0">Alice (Client)</h5>
+                      <span class="badge bg-secondary font-monospace">192.168.1.10</span>
+                      <span class="badge bg-dark text-info">Originator</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="node-body">
+                  <!-- Preset Selection -->
+                  <div class="mb-3">
+                    <label class="form-label small text-muted">Select Preset Message or Custom Input:</label>
+                    <select class="form-select form-select-cyber" id="aliceMessagePreset">
+                      <option value="Transfer $10,000 to Bob Account #4921">Financial: Wire $10,000 to Bob</option>
+                      <option value="LOGIN: admin | PASS: SuperSecretToken#99">Credentials: Login Authentication</option>
+                      <option value="Contract #8892 Status: APPROVED by Board">Confidential: Approve Contract</option>
+                      <option value="Deploy Payload to Production Server at 22:00">Command: Server Deploy Instruction</option>
+                      <option value="custom">-- Custom Message Below --</option>
+                    </select>
+                  </div>
+
+                  <!-- Text Input -->
+                  <div class="mb-3">
+                    <label class="form-label small text-muted">Message Payload to Transmit:</label>
+                    <textarea class="form-control form-control-cyber" id="aliceMessageInput" rows="3" placeholder="Enter message from Alice...">Transfer $10,000 to Bob Account #4921</textarea>
+                  </div>
+
+                  <!-- Alice Key Details -->
+                  <div class="p-2 mb-3 bg-darker rounded border border-secondary small">
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Cipher Algorithm:</span>
+                      <span class="text-cyan fw-bold font-monospace">AES-GCM-256</span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                      <span class="text-muted">Auth Tag Length:</span>
+                      <span class="text-light font-monospace">128 bits (16 bytes)</span>
+                    </div>
+                  </div>
+
+                  <!-- Alice Action Button -->
+                  <button class="btn btn-cyber-primary w-100 py-2" id="btnSendMessage">
+                    <i class="bi bi-send-fill me-1"></i> Send Message (Alice &rarr; Bob)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- EVE NODE (Man-in-the-Middle Adversary) -->
+            <div class="col-lg-4 node-column">
+              <div class="node-card node-eve" id="eveNodeCard">
+                <div class="radar-overlay" id="eveRadarOverlay"></div>
+
+                <div class="node-header">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="node-avatar avatar-eve">
+                      <i class="bi bi-incognito"></i>
+                    </div>
+                    <div>
+                      <h5 class="text-light mb-0">Eve (MITM Adversary)</h5>
+                      <span class="badge bg-secondary font-monospace">192.168.1.1</span>
+                      <span class="badge bg-danger">Wiretap Proxy</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span class="badge bg-secondary" id="eveTamperStatusBadge">Idle</span>
+                  </div>
+                </div>
+
+                <div class="node-body">
+                  <!-- Intercepted Buffer Box -->
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label small text-muted mb-0">Captured Packet Buffer:</label>
+                      <span class="badge bg-dark text-warning small">In-Flight Buffer</span>
+                    </div>
+                    <div class="crypto-hex-box" id="eveInterceptedBuffer" style="min-height: 58px;">
+                      <span class="text-muted">Awaiting intercepted packet...</span>
+                    </div>
+                  </div>
+
+                  <!-- Interactive Controls for Eve -->
+                  <div class="d-grid gap-2 mb-3">
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <button class="btn btn-cyber-warning w-100" id="btnInterceptMessage" disabled>
+                          <i class="bi bi-broadcast me-1"></i> Intercept
+                        </button>
+                      </div>
+                      <div class="col-6">
+                        <button class="btn btn-cyber-purple w-100" id="btnReadMessage" disabled>
+                          <i class="bi bi-eye-fill me-1"></i> Read
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Eve Read Inspection Modal/Box -->
+                  <div class="mb-3" id="eveInspectionCard" style="display: none;">
+                    <div class="p-2 bg-dark rounded border border-warning" id="eveReadInspectionContent"></div>
+                  </div>
+
+                  <!-- Tampering Section: Plaintext Mode -->
+                  <div id="evePlaintextTamperCard" class="mb-3">
+                    <label class="form-label small text-muted">Modify Intercepted Plaintext Payload:</label>
+                    <textarea class="form-control form-control-cyber font-monospace text-warning mb-2" id="eveModifiedInput" rows="2" placeholder="Captured text will appear here..."></textarea>
+                    
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                      <button class="btn btn-sm btn-outline-danger btn-quick-tamper-plain" data-tamper-text="Transfer $95,000 to Eve Account #9999">
+                        <i class="bi bi-cash"></i> $95k to Eve
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger btn-quick-tamper-plain" data-tamper-text="LOGIN: attacker | PASS: PwnedToken#00">
+                        <i class="bi bi-key"></i> Fake Login
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger btn-quick-tamper-plain" data-tamper-text="Contract #8892 Status: REJECTED by Eve">
+                        <i class="bi bi-x-circle"></i> Reject
+                      </button>
+                    </div>
+
+                    <button class="btn btn-cyber-danger w-100" id="btnModifyMessage" disabled>
+                      <i class="bi bi-pencil-fill me-1"></i> Apply Payload Modification
+                    </button>
+                  </div>
+
+                  <!-- Tampering Section: Ciphertext Mode (AES-GCM) -->
+                  <div id="eveCiphertextTamperCard" class="mb-3" style="display: none;">
+                    <div class="alert alert-dark border-purple small py-2 mb-2">
+                      <i class="bi bi-shield-lock text-purple"></i> <strong>Ciphertext Tamper Controls:</strong>
+                      Eve cannot read the plaintext, but can tamper with ciphertext bits or auth tags.
+                    </div>
+                    <div class="d-grid gap-2">
+                      <button class="btn btn-sm btn-outline-danger" id="btnTamperFlipBit">
+                        <i class="bi bi-toggles"></i> Flip 1 Bit in Ciphertext (XOR 0x01)
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" id="btnTamperCorruptTag">
+                        <i class="bi bi-slash-circle"></i> Corrupt 16-Byte GMAC Tag
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" id="btnTamperGarbageBytes">
+                        <i class="bi bi-file-earmark-binary"></i> Append 8 Garbage Bytes
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Forward Button -->
+                  <button class="btn btn-cyber-primary w-100 py-2 mt-2" id="btnForwardMessage" disabled>
+                    <i class="bi bi-arrow-right-circle-fill me-1"></i> Forward Packet &rarr; Bob
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- BOB NODE (Server / Destination) -->
+            <div class="col-lg-4 node-column">
+              <div class="node-card node-bob" id="bobNodeCard">
+                <div class="node-header">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="node-avatar avatar-bob">
+                      <i class="bi bi-server"></i>
+                    </div>
+                    <div>
+                      <h5 class="text-light mb-0">Bob (Server)</h5>
+                      <span class="badge bg-secondary font-monospace">192.168.1.50</span>
+                      <span class="badge bg-success">Destination</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span id="bobVerificationResultBadge" class="badge-verification-result"></span>
+                  </div>
+                </div>
+
+                <div class="node-body">
+                  <!-- Bob Message Output Box -->
+                  <div class="mb-3">
+                    <label class="form-label small text-muted">Final Received Message at Destination:</label>
+                    <div class="p-3 bg-darker rounded border border-secondary" id="bobReceivedMessageOutput" style="min-height: 110px;">
+                      <span class="text-muted">Awaiting incoming transmission from channel...</span>
+                    </div>
+                  </div>
+
+                  <!-- Bob Cryptographic Verification Status -->
+                  <div class="mb-3" id="bobSecurityReportBox">
+                    <div class="p-2 bg-darker rounded border border-secondary small text-muted">
+                      Integrity verification awaiting incoming packet.
+                    </div>
+                  </div>
+
+                  <!-- Bob Security Protocol Specs -->
+                  <div class="p-2 bg-darker rounded border border-secondary small">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Authenticated Decryptor:</span>
+                      <span class="text-success font-monospace">SubtleCrypto.decrypt()</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Tamper Resistance:</span>
+                      <span class="text-light">Cryptographic Galois Tag</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: COMMUNICATION STATE MATRIX & MESSAGE TRANSFORMATION -->
+    <section id="matrix" class="mb-4">
+      <div class="row g-4">
+
+        <!-- Part A: Step-by-Step Message Transformation Pipeline -->
+        <div class="col-12">
+          <div class="state-matrix-card">
+            <h5 class="text-light mb-3"><i class="bi bi-signpost-split text-cyan me-2"></i>Step-by-Step Message Transformation Pipeline</h5>
+            <div class="transform-grid">
+              
+              <div class="transform-box">
+                <div class="transform-step-num">STAGE 1 &bull; ORIGIN</div>
+                <h6 class="text-cyan"><i class="bi bi-pencil-square me-1"></i> Original Message (Alice)</h6>
+                <div class="transform-content" id="transformOriginalMsg">—</div>
+                <div class="small text-muted mt-2">Authored by Alice prior to transmission.</div>
+              </div>
+
+              <div class="transform-box">
+                <div class="transform-step-num">STAGE 2 &bull; TAP</div>
+                <h6 class="text-warning"><i class="bi bi-broadcast me-1"></i> Intercepted on Wire (Eve)</h6>
+                <div class="transform-content" id="transformInterceptedMsg">—</div>
+                <div class="small text-muted mt-2">Captured mid-channel at the wiretap proxy.</div>
+              </div>
+
+              <div class="transform-box">
+                <div class="transform-step-num">STAGE 3 &bull; TAMPER</div>
+                <h6 class="text-danger"><i class="bi bi-pencil-fill me-1"></i> Modified Payload (Eve)</h6>
+                <div class="transform-content" id="transformModifiedMsg">—</div>
+                <div class="small text-muted mt-2">Altered by attacker (or passed unmodified).</div>
+              </div>
+
+              <div class="transform-box">
+                <div class="transform-step-num">STAGE 4 &bull; RECEIPT</div>
+                <h6 class="text-success"><i class="bi bi-inbox-fill me-1"></i> Final Received Message (Bob)</h6>
+                <div class="transform-content" id="transformReceivedMsg">—</div>
+                <div class="small text-muted mt-2">Delivered to Bob &amp; cryptographic evaluation.</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Part B: Full Real-Time Communication State Matrix -->
+        <div class="col-12">
+          <div class="state-matrix-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h5 class="text-light mb-0"><i class="bi bi-table text-cyan me-2"></i>Communication State Matrix</h5>
+                <span class="small text-muted">Real-time state tracking across all 7 protocol stages</span>
+              </div>
+              <span class="badge bg-secondary font-monospace">7-Stage Protocol FSM</span>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-cyber mb-0">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">#</th>
+                    <th>Stage Name &amp; Role</th>
+                    <th>Actor</th>
+                    <th>State Status</th>
+                    <th>Payload Snapshot</th>
+                    <th>Timestamp</th>
+                    <th>Security / Protocol Note</th>
+                  </tr>
+                </thead>
+                <tbody id="stateMatrixTableBody">
+                  <!-- Populated dynamically by state-machine.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 3: CRYPTOGRAPHIC INSPECTOR & ACTIVITY LOG -->
+    <div class="row g-4 mb-4">
+
+      <!-- Cryptographic Inspector (AES-GCM Web Crypto) -->
+      <div class="col-lg-6" id="crypto">
+        <div class="state-matrix-card h-100">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="text-light mb-0"><i class="bi bi-cpu text-purple me-2"></i>Web Crypto API Cryptographic Inspector</h5>
+            <span class="badge bg-purple">AES-GCM 256-bit</span>
+          </div>
+
+          <p class="small text-muted">
+            Inspect the live 256-bit symmetric key, initialization vector (IV), ciphertext, and 128-bit Galois Message Authentication Code (GMAC) generated via <code>window.crypto.subtle</code>.
+          </p>
+
+          <div class="mb-3">
+            <label class="form-label small text-info mb-1"><i class="bi bi-key"></i> Shared Symmetric Key (256-bit / 32 Bytes):</label>
+            <div class="crypto-hex-box" id="cryptoInspectorKeyHex">Loading key from Web Crypto API...</div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small text-cyan mb-1"><i class="bi bi-dice-5"></i> Initialization Vector (IV - 96-bit / 12 Bytes):</label>
+              <div class="crypto-hex-box" id="cryptoInspectorIvHex">Awaiting packet transmission...</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-danger mb-1"><i class="bi bi-patch-check"></i> GMAC Authentication Tag (128-bit / 16 Bytes):</label>
+              <div class="crypto-hex-box" id="cryptoInspectorTagHex">Awaiting packet transmission...</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small text-purple mb-1"><i class="bi bi-file-lock"></i> Raw Ciphertext Payload (Hex):</label>
+            <div class="crypto-hex-box" id="cryptoInspectorCipherHex">Awaiting packet transmission...</div>
+          </div>
+
+          <!-- Cryptographic Formula & Theory -->
+          <div class="p-3 bg-darker rounded border border-secondary small">
+            <h6 class="text-light mb-2"><i class="bi bi-mortarboard text-cyan me-1"></i> Cryptographic Integrity Mathematical Model</h6>
+            <p class="mb-1 text-muted">
+              In AES-GCM (Galois/Counter Mode), confidentiality is achieved by counter mode encryption, and integrity is computed over the Galois field $\text{GF}(2^{128})$:
+            </p>
+            <div class="p-2 bg-dark rounded font-monospace text-info my-2">
+              Ciphertext: C = AES-CTR_K(IV, Plaintext)<br>
+              Auth Tag: T = GHASH_H(AAD || C || Lengths) &oplus; AES_K(J_0)
+            </div>
+            <p class="mb-0 text-muted">
+              Because the tag $T$ is mathematically tied to every bit of ciphertext and the secret key $K$, Eve cannot forge a valid tag for modified ciphertext without knowing $K$.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-Time Activity Log Terminal -->
+      <div class="col-lg-6">
+        <div class="terminal-window h-100 d-flex flex-column">
+          <div class="terminal-header">
+            <div class="d-flex align-items-center gap-2">
+              <div class="terminal-dots">
+                <div class="terminal-dot bg-danger"></div>
+                <div class="terminal-dot bg-warning"></div>
+                <div class="terminal-dot bg-success"></div>
+              </div>
+              <span class="small text-light fw-bold ms-2"><i class="bi bi-terminal"></i> Activity Log Terminal</span>
+            </div>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-secondary py-0 text-light small" id="btnCopyLogs" title="Copy Log to Clipboard">
+                <i class="bi bi-clipboard"></i> Copy
+              </button>
+              <button class="btn btn-sm btn-outline-secondary py-0 text-light small" id="btnClearLogs" title="Clear Event Logs">
+                <i class="bi bi-trash"></i> Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="terminal-body flex-grow-1" id="activityLogContainer">
+            <!-- Log entries injected here -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECTION 4: CONCEPTUAL UNDERSTANDING & KNOWLEDGE BASE -->
+    <section id="education" class="mb-4">
+      <div class="knowledge-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h4 class="text-light mb-1"><i class="bi bi-mortarboard-fill text-cyan me-2"></i>Conceptual Understanding: MITM Attacks &amp; Defenses</h4>
+            <p class="text-muted small mb-0">Comprehensive educational overview aligned with college evaluation criteria.</p>
+          </div>
+          <span class="badge bg-primary text-dark font-monospace">Core Theory</span>
+        </div>
+
+        <div class="row g-4">
+
+          <!-- Concept 1: Definition of MITM Attack -->
+          <div class="col-md-6 col-xl-4">
+            <div class="p-3 bg-darker rounded border border-secondary h-100">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="concept-badge bg-danger">Concept 1</span>
+                <h6 class="text-light mb-0">Definition of MITM Attack</h6>
+              </div>
+              <p class="small text-muted mb-2">
+                A <strong>Man-in-the-Middle (MITM)</strong> attack occurs when a malicious adversary secretly intercepts, reads, and potentially alters communication between two legitimate parties (Alice and Bob) who believe they are communicating directly.
+              </p>
+              <ul class="small text-muted ps-3 mb-0">
+                <li><strong>Passive Eavesdropping:</strong> Adversary sniffs packets to violate confidentiality without modifying data.</li>
+                <li><strong>Active MITM:</strong> Adversary intercepts, alters, or injects bogus packets, violating both integrity and authenticity.</li>
+                <li><strong>Common Attack Vectors:</strong> ARP cache poisoning on local LANs, DNS cache spoofing, and Rogue Wi-Fi Hotspots ("Evil Twin").</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Concept 2: Roles of Alice, Bob, and Eve -->
+          <div class="col-md-6 col-xl-4">
+            <div class="p-3 bg-darker rounded border border-secondary h-100">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="concept-badge bg-cyan text-dark">Concept 2</span>
+                <h6 class="text-light mb-0">Roles of Alice, Bob, and Eve</h6>
+              </div>
+              <p class="small text-muted mb-2">
+                The classical cryptographic model divides participants into distinct functional roles:
+              </p>
+              <ul class="small text-muted ps-3 mb-0">
+                <li><strong class="text-cyan">Alice (Sender / Client):</strong> Initiates transmission with legitimate intent (e.g. online banking client, API caller).</li>
+                <li><strong class="text-success">Bob (Receiver / Server):</strong> The intended destination expecting unadulterated messages from Alice (e.g. bank server).</li>
+                <li><strong class="text-danger">Eve (Adversary / Eavesdropper):</strong> Situated in the routing path; can intercept, inspect, alter, drop, or inject packets.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Concept 3: Message Interception -->
+          <div class="col-md-6 col-xl-4">
+            <div class="p-3 bg-darker rounded border border-secondary h-100">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="concept-badge bg-warning text-dark">Concept 3</span>
+                <h6 class="text-light mb-0">Message Interception</h6>
+              </div>
+              <p class="small text-muted mb-2">
+                In unencrypted or compromised networks, packets travel over shared broadcast domains or untrusted routing nodes.
+              </p>
+              <ul class="small text-muted ps-3 mb-0">
+                <li><strong>ARP Poisoning:</strong> Eve sends forged ARP replies to associate her MAC address with the gateway IP, redirecting Alice's traffic to Eve's interface.</li>
+                <li><strong>Packet Capture:</strong> Tools like Wireshark/libpcap pull packets into Eve's memory buffer before they reach the default gateway.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Concept 4: Message Modification -->
+          <div class="col-md-6 col-xl-4">
+            <div class="p-3 bg-darker rounded border border-secondary h-100">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="concept-badge bg-danger">Concept 4</span>
+                <h6 class="text-light mb-0">Message Modification</h6>
+              </div>
+              <p class="small text-muted mb-2">
+                Once intercepted, an active attacker alters payload fields before packet retransmission.
+              </p>
+              <ul class="small text-muted ps-3 mb-0">
+                <li><strong>Financial Tampering:</strong> Replacing payee bank account numbers or altering payment amounts (e.g. from $10,000 to $95,000).</li>
+                <li><strong>Command Injection:</strong> Changing administrative parameters or authorization flags from <code>APPROVED</code> to <code>REJECTED</code>.</li>
+                <li><strong>Zero Verification:</strong> In plaintext HTTP, Bob has no mathematical mechanism to detect changes!</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Concept 5: Message Forwarding -->
+          <div class="col-md-6 col-xl-4">
+            <div class="p-3 bg-darker rounded border border-secondary h-100">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="concept-badge bg-purple">Concept 5</span>
+                <h6 class="text-light mb-0">Message Forwarding &amp; Camouflage</h6>
+              </div>
+              <p class="small text-muted mb-2">
+                If Eve simply dropped intercepted packets, connection timeouts would immediately alert Alice and Bob of network malfunction.
+              </p>
+              <ul class="small text-muted ps-3 mb-0">
+                <li><strong>Session Preservation:</strong> Eve recalculates TCP checksums and relays the modified packet to Bob.</li>
+                <li><strong>Stealth:</strong> Alice believes Bob received her original request, and Bob believes the message originated authentically from Alice.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Concept 6: Encryption & Authentication (AES-GCM) -->
+          <div class="col-md-6 col-xl-4">
+            <div class="p-3 bg-darker rounded border border-secondary h-100">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="concept-badge bg-success">Concept 6</span>
+                <h6 class="text-light mb-0">Encryption vs. Authentication</h6>
+              </div>
+              <p class="small text-muted mb-2">
+                <strong>Crucial Distinction:</strong> Confidentiality (encryption) prevents eavesdropping, but does NOT prevent tampering without an <em>authentication tag</em>.
+              </p>
+              <ul class="small text-muted ps-3 mb-0">
+                <li><strong>Malleability:</strong> Pure stream or counter ciphers allow bit-flipping attacks if integrity is unprotected.</li>
+                <li><strong>AEAD (AES-GCM):</strong> Produces both ciphertext and a 128-bit GMAC authentication tag. If any bit changes, Bob's decryption strictly fails.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Concept 7: Prevention of MITM Attacks -->
+          <div class="col-12">
+            <div class="p-3 bg-darker rounded border border-secondary">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="concept-badge bg-info text-dark">Concept 7</span>
+                <h6 class="text-light mb-0">Prevention &amp; Defense Mechanisms Against MITM</h6>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="p-2 bg-dark rounded border border-secondary h-100">
+                    <strong class="text-cyan small d-block mb-1"><i class="bi bi-shield-check"></i> TLS 1.3 &amp; PKI Certificates</strong>
+                    <p class="small text-muted mb-0">X.509 digital certificates signed by trusted Certificate Authorities (CAs) authenticate server identities and negotiate session keys.</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="p-2 bg-dark rounded border border-secondary h-100">
+                    <strong class="text-purple small d-block mb-1"><i class="bi bi-key-fill"></i> Mutual TLS (mTLS)</strong>
+                    <p class="small text-muted mb-0">Both client and server present certificates to authenticate each other, preventing rogue proxy impersonation.</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="p-2 bg-dark rounded border border-secondary h-100">
+                    <strong class="text-warning small d-block mb-1"><i class="bi bi-router"></i> Dynamic ARP Inspection (DAI)</strong>
+                    <p class="small text-muted mb-0">Enterprise network switches validate ARP packets against DHCP snooping databases to drop forged ARP replies on the wire.</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="p-2 bg-dark rounded border border-secondary h-100">
+                    <strong class="text-success small d-block mb-1"><i class="bi bi-dns"></i> DNSSEC &amp; HSTS</strong>
+                    <p class="small text-muted mb-0">DNSSEC prevents DNS cache poisoning; HTTP Strict Transport Security (HSTS) prevents SSL-stripping downgrades.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: FINAL EVALUATION TEST SUITE -->
+    <section id="tests" class="mb-5">
+      <div class="state-matrix-card">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+          <div>
+            <h4 class="text-light mb-1"><i class="bi bi-patch-check-fill text-success me-2"></i>College Evaluation Test Suite (Rubric Verification)</h4>
+            <p class="text-muted small mb-0">Automated verification of the 4 official evaluation scenarios with live assertions and metric logging.</p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span id="overallTestResultBadge" class="badge bg-secondary px-3 py-2">Test Suite Ready</span>
+            <button class="btn btn-cyber-primary" id="btnRunAllTests">
+              <i class="bi bi-play-circle-fill me-1"></i> Run All 4 Evaluation Tests
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Test Cards Grid -->
+        <div class="row g-3 mb-4">
+          
+          <!-- TEST 1 -->
+          <div class="col-md-6 col-xl-3">
+            <div class="p-3 bg-darker rounded border border-secondary h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge bg-primary">TEST 1</span>
+                  <span id="badge_test1" class="badge bg-secondary">Pending</span>
+                </div>
+                <h6 class="text-light mb-1">Normal MITM Attack</h6>
+                <p class="small text-muted mb-3">
+                  Alice sends message &rarr; Eve intercepts &rarr; modifies payload &rarr; forwards &rarr; Bob receives modified text without warning.
+                </p>
+              </div>
+              <button class="btn btn-sm btn-outline-info w-100" id="btnRunTest1">
+                <i class="bi bi-play-fill"></i> Run Test 1
+              </button>
+            </div>
+          </div>
+
+          <!-- TEST 2 -->
+          <div class="col-md-6 col-xl-3">
+            <div class="p-3 bg-darker rounded border border-secondary h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge bg-primary">TEST 2</span>
+                  <span id="badge_test2" class="badge bg-secondary">Pending</span>
+                </div>
+                <h6 class="text-light mb-1">No Modification</h6>
+                <p class="small text-muted mb-3">
+                  Alice sends &rarr; Eve intercepts &rarr; reads but does not modify &rarr; forwards &rarr; Bob receives original authentic message.
+                </p>
+              </div>
+              <button class="btn btn-sm btn-outline-info w-100" id="btnRunTest2">
+                <i class="bi bi-play-fill"></i> Run Test 2
+              </button>
+            </div>
+          </div>
+
+          <!-- TEST 3 -->
+          <div class="col-md-6 col-xl-3">
+            <div class="p-3 bg-darker rounded border border-secondary h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge bg-primary">TEST 3</span>
+                  <span id="badge_test3" class="badge bg-secondary">Pending</span>
+                </div>
+                <h6 class="text-light mb-1">Secure AEAD Auth Failure</h6>
+                <p class="small text-muted mb-3">
+                  Alice sends AES-GCM encrypted packet &rarr; Eve modifies ciphertext &rarr; Bob's Web Crypto verification strictly FAILS.
+                </p>
+              </div>
+              <button class="btn btn-sm btn-outline-info w-100" id="btnRunTest3">
+                <i class="bi bi-play-fill"></i> Run Test 3
+              </button>
+            </div>
+          </div>
+
+          <!-- TEST 4 -->
+          <div class="col-md-6 col-xl-3">
+            <div class="p-3 bg-darker rounded border border-secondary h-100 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge bg-primary">TEST 4</span>
+                  <span id="badge_test4" class="badge bg-secondary">Pending</span>
+                </div>
+                <h6 class="text-light mb-1">System Reset Verification</h6>
+                <p class="small text-muted mb-3">
+                  All buffers, state matrix rows, active node pulses, animation packets, and HUD indicators return cleanly to Initial State.
+                </p>
+              </div>
+              <button class="btn btn-sm btn-outline-info w-100" id="btnRunTest4">
+                <i class="bi bi-play-fill"></i> Run Test 4
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Automated Test Log Output Container -->
+        <div>
+          <label class="form-label small text-muted"><i class="bi bi-journal-text me-1"></i>Automated Test Assertion Output:</label>
+          <div id="testRunnerLogOutput" class="p-3 bg-darker rounded border border-secondary font-monospace small" style="max-height: 220px; overflow-y: auto;">
+            <div class="text-muted">Click "Run All 4 Evaluation Tests" or run individual tests above to view cryptographic assertions.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+  <script src="js/crypto-manager.js"></script>
+  <script src="js/state-machine.js"></script>
+  <script src="js/animation-engine.js"></script>
+  <script src="js/simulator-controller.js"></script>
+  <script src="js/evaluation-tests.js"></script>
+
+  <!-- Initialization Bootstrap -->
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await window.simulatorController.init();
+        window.evaluationTestRunner.init();
+        console.log("MITM Attack Simulator initialized successfully.");
+      } catch (err) {
+        console.error("Initialization error:", err);
+      }
+    });
+  </script>
+
+</body>
+</html>
